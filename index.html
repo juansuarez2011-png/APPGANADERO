@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Syntro Campo Offline - Control RFID y Nacimientos</title>
+<style>
+  :root {
+    --primary: #1b5e20;
+    --primary-light: #2e7d32;
+    --primary-dark: #0d3b12;
+    --accent: #f57c00;
+    --bg: #f0f4f1;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #cbd5e1;
+    --danger: #dc2626;
+    --info: #0284c7;
+    --shadow-3d: 0 6px 0 #cbd5e1, 0 10px 20px rgba(0,0,0,0.08);
+    --btn-shadow-3d: 0 4px 0 #0d3b12;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+
+  /* Header 3D */
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand h1 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-offline {
+    background: #10b981;
+    color: #064e3b;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+  }
+
+  /* Navegación por Módulos */
+  .nav-tabs {
+    max-width: 1100px;
+    margin: 18px auto 0;
+    padding: 0 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .tab-btn {
+    background: #e2e8f0;
+    color: var(--text);
+    border: 2px solid #cbd5e1;
+    border-bottom: 5px solid #94a3b8;
+    padding: 14px 12px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    text-align: center;
+  }
+
+  .tab-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary-dark);
+    border-bottom: 5px solid var(--primary-dark);
+    transform: translateY(-1px);
+  }
+
+  .tab-btn:active {
+    transform: translateY(2px);
+    border-bottom-width: 2px;
+  }
+
+  /* Contenedor Principal */
+  .container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+
+  .module-section {
+    display: none;
+  }
+
+  .module-section.active {
+    display: block;
+    animation: fadeIn 0.2s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Tarjetas Estilo 3D */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-3d);
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Formularios */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: #f8fafc;
+    color: var(--text);
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.15);
+  }
+
+  input[readonly] {
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+    cursor: not-allowed;
+  }
+
+  .rfid-input {
+    border-color: var(--accent);
+    background: #fffbeb;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* Botones 3D */
+  .btn {
+    padding: 13px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .btn:active {
+    transform: translateY(3px);
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: var(--btn-shadow-3d);
+  }
+
+  .btn-primary:active {
+    box-shadow: 0 1px 0 #0d3b12;
+  }
+
+  .btn-secondary {
+    background: #0284c7;
+    color: white;
+    box-shadow: 0 4px 0 #0369a1;
+  }
+
+  .btn-accent {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 0 #b45309;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 3px 0 #991b1b;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  /* Cajas Dinámicas de Crías */
+  .calf-box {
+    background: #f1f8f3;
+    border: 2px dashed #4caf50;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .calf-box h4 {
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Alerta de Búsqueda Madre */
+  .mother-status {
+    margin-top: 10px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .status-found {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+
+  .status-not-found {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  /* Contenedor de Gráficas */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+  }
+
+  .chart-card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .chart-card h3 {
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  canvas {
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  /* Tablas Responsivas */
+  .table-responsive {
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  tr:hover {
+    background: #f8fafc;
+  }
+
+  .pill {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: inline-block;
+  }
+
+  .pill-valid { background: #dcfce7; color: #166534; }
+  .pill-loss { background: #fee2e2; color: #991b1b; }
+  .pill-twin { background: #fef3c7; color: #92400e; }
+
+  /* Log / Notificaciones */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1e293b;
+    color: white;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .toast.show {
+    opacity: 1;
+  }
+
+  @media (max-width: 600px) {
+    .nav-tabs {
+      grid-template-columns: 1fr;
+    }
+    .btn {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <h1>SYNTRO CAMPO</h1>
+      <span class="badge-offline">100% OFFLINE</span>
+    </div>
+    <div style="font-size: 0.85rem; opacity: 0.9;">
+      Animales: <strong id="headerTotalAnimales">0</strong> | Eventos Parto: <strong id="headerTotalPartos">0</strong>
+    </div>
+  </div>
+</header>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('mod1', this)">
+    1. Maestro RFID y Arete
+  </button>
+  <button class="tab-btn" onclick="switchTab('mod2', this)">
+    2. Nacimientos y Gráficas
+  </button>
+</div>
+
+<div class="container">
+
+  <!-- ========================================================= -->
+  <!-- MÓDULO 1: MAESTRO DE ANIMALES (FINCA - CHIP - ARETE)       -->
+  <!-- ========================================================= -->
+  <section id="mod1" class="module-section active">
+    <div class="card">
+      <div class="card-title">
+        <span>Registro de Identificación Animal</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Lector RFID / Manual</span>
+      </div>
+
+      <form id="formMaestro" onsubmit="guardarAnimal(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="m_finca">Nombre de la Finca *</label>
+            <input type="text" id="m_finca" list="listaFincas" placeholder="Ej. Finca El Porvenir" required>
+            <datalist id="listaFincas"></datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="m_chip">Código Chip (RFID) *</label>
+            <input type="text" id="m_chip" class="rfid-input" placeholder="Pase el lector o escriba chip" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label for="m_arete">Número de Arete / Chapeta *</label>
+            <input type="text" id="m_arete" placeholder="Ej. 405-B" required>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Guardar Animal</button>
+          <button type="button" class="btn btn-secondary" onclick="exportarMaestroCSV()">Exportar Maestro CSV</button>
+          <button type="button" class="btn btn-accent" onclick="document.getElementById('importFile').click()">Importar Respaldo JSON</button>
+          <button type="button" class="btn btn-secondary" style="background:#475569; box-shadow:0 4px 0 #1e293b;" onclick="exportarRespaldoJSON()">Respaldo Total JSON</button>
+          <input type="file" id="importFile" accept=".json" class="hidden" onchange="importarRespaldoJSON(event)">
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Base de Datos Registrada</span>
+        <input type="text" id="buscarMaestro" placeholder="Filtrar por finca, chip o arete..." style="max-width: 280px; padding: 8px 12px; font-size: 0.88rem;" onkeyup="renderTablaMaestro()">
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Finca</th>
+              <th>Chip (RFID)</th>
+              <th>Arete</th>
+              <th>Fecha Registro</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMaestro"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- MÓDULO 2: NACIMIENTOS, REGLAS ZOOTÉCNICAS Y GRÁFICAS       -->
+  <!-- ========================================================= -->
+  <section id="mod2" class="module-section">
+    <div class="card">
+      <div class="card-title">
+        <span>Registro de Parto / Nacimiento</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Detección automática de Finca</span>
+      </div>
+
+      <!-- Buscador de Madre por Chip o Arete -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="n_busqueda_madre">1. Leer Chip o Escribir Arete de la Madre *</label>
+          <input type="text" id="n_busqueda_madre" class="rfid-input" placeholder="Pase el chip o ingrese arete..." oninput="buscarMadre()" onkeydown="if(event.key==='Enter'){event.preventDefault(); buscarMadre();}">
+        </div>
+
+        <div class="form-group">
+          <label for="n_finca_auto">Finca Asignada (Automático)</label>
+          <input type="text" id="n_finca_auto" readonly placeholder="Esperando identificación...">
+        </div>
+
+        <div class="form-group">
+          <label for="n_madre_info">Datos Madre Confirmada</label>
+          <input type="text" id="n_madre_info" readonly placeholder="Chip / Arete">
+        </div>
+      </div>
+
+      <div id="motherStatusBox" class="mother-status hidden"></div>
+
+      <form id="formNacimiento" onsubmit="guardarNacimiento(event)" style="margin-top: 18px;">
+        <input type="hidden" id="n_chip_confirmado">
+        <input type="hidden" id="n_arete_confirmado">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="n_fecha">Fecha del Evento *</label>
+            <input type="date" id="n_fecha" required>
+          </div>
+
+          <div class="form-group">
+            <label for="n_tipo_parto">Tipo de Parto *</label>
+            <select id="n_tipo_parto" onchange="actualizarFormularioParto()" required>
+              <option value="Parto Normal">Parto Normal</option>
+              <option value="Gemelar">Gemelar (2 crías = 1 parto IEP)</option>
+              <option value="Distócico">Distócico</option>
+              <option value="Aborto">Aborto (No suma parto / Sin cría)</option>
+              <option value="Mortinato">Mortinato (No suma parto / Sin cría)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Regla visual informativa -->
+        <div id="reglaZootecnicaInfo" style="margin-top: 12px; font-size: 0.85rem; color: #1e40af; background: #eff6ff; padding: 10px 14px; border-radius: 8px; border: 1px solid #bfdbfe;">
+          <strong>Regla IEP:</strong> Este evento sumará <strong>1 parto efectivo</strong> para el cálculo de Intervalo Entre Partos (IEP).
+        </div>
+
+        <!-- CONTENEDOR CRÍA 1 -->
+        <div id="boxCria1" class="calf-box">
+          <h4>Datos de la Cría 1 (Nacido Vivo)</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="c1_id">Arete o Chip Cría 1 *</label>
+              <input type="text" id="c1_id" placeholder="ID / Arete / Chip" required>
+            </div>
+            <div class="form-group">
+              <label for="c1_sexo">Sexo Cría 1 *</label>
+              <select id="c1_sexo" required>
+                <option value="Hembra">Hembra</option>
+                <option value="Macho">Macho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="c1_peso">Peso al Nacer (kg) - Opcional</label>
+              <input type="number" id="c1_peso" step="0.1" min="0" placeholder="Ej. 32.5">
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTENEDOR CRÍA 2 (SOLO GEMELAR) -->
+        <div id="boxCria2" class="calf-box hidden">
+          <h4>Datos de la Cría 2 (Parto Gemelar - Mismo Evento IEP)</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="c2_id">Arete o Chip Cría 2 *</label>
+              <input type="text" id="c2_id" placeholder="ID / Arete / Chip Cría 2">
+            </div>
+            <div class="form-group">
+              <label for="c2_sexo">Sexo Cría 2 *</label>
+              <select id="c2_sexo">
+                <option value="Hembra">Hembra</option>
+                <option value="Macho">Macho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="c2_peso">Peso al Nacer Cría 2 (kg) - Opcional</label>
+              <input type="number" id="c2_peso" step="0.1" min="0" placeholder="Ej. 28.0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+          <label for="n_obs">Observaciones / Notas de Campo</label>
+          <input type="text" id="n_obs" placeholder="Ej. Vaca de primer parto con pérdida, asistencia veterinaria, vigor...">
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Registrar Evento de Parto</button>
+          <button type="button" class="btn btn-secondary" onclick="exportarNacimientosCSV()">Exportar Nacimientos CSV (Para Módulo IEP)</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- SECCIÓN DE GRÁFICAS NATIVAS OFFLINE -->
+    <div class="card">
+      <div class="card-title">
+        <span>Indicadores Gráficos de Nacimientos</span>
+        <select id="filtroFincaGrafica" onchange="actualizarGraficas()" style="max-width: 240px; padding: 6px 10px; font-size: 0.85rem;">
+          <option value="TODAS">Todas las Fincas</option>
+        </select>
+      </div>
+
+      <div class="charts-grid">
+        <!-- Gráfica de Dona: Sexo -->
+        <div class="chart-card">
+          <h3>Distribución por Sexo (Crías Vivas)</h3>
+          <canvas id="canvasDonaSexo" width="260" height="220"></canvas>
+          <div id="legendDonaSexo" class="chart-legend"></div>
+        </div>
+
+        <!-- Gráfica de Barras: Tipos de Parto -->
+        <div class="chart-card">
+          <h3>Conteo por Tipo de Parto</h3>
+          <canvas id="canvasBarrasParto" width="380" height="220"></canvas>
+          <div id="legendBarrasParto" class="chart-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL DE NACIMIENTOS -->
+    <div class="card">
+      <div class="card-title">
+        <span>Historial de Eventos Registrados</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Finca</th>
+              <th>Madre (Arete / Chip)</th>
+              <th>Tipo de Parto</th>
+              <th>Cuenta IEP</th>
+              <th>Cría(s)</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyNacimientos"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // =========================================================================
+  // ESTADO Y ALMACENAMIENTO OFFLINE (LocalStorage)
+  // =========================================================================
+  const DB_KEY_ANIMALES = 'syntro_offline_animales_v1';
+  const DB_KEY_PARTOS = 'syntro_offline_partos_v1';
+
+  let animalesDB = JSON.parse(localStorage.getItem(DB_KEY_ANIMALES)) || [];
+  let partosDB = JSON.parse(localStorage.getItem(DB_KEY_PARTOS)) || [];
+
+  // Inicialización al cargar la página
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('n_fecha').valueAsDate = new Date();
+    actualizarUI();
+    actualizarFormularioParto();
+
+    // Captura automática de Enter desde lector RFID en Módulo 1
+    document.getElementById('m_chip').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('m_arete').focus();
+      }
+    });
+  });
+
+  function guardarStorage() {
+    localStorage.setItem(DB_KEY_ANIMALES, JSON.stringify(animalesDB));
+    localStorage.setItem(DB_KEY_PARTOS, JSON.stringify(partosDB));
+    actualizarUI();
+  }
+
+  function mostrarToast(mensaje, esError = false) {
+    const toast = document.getElementById('toast');
+    toast.textContent = mensaje;
+    toast.style.background = esError ? '#b91c1c' : '#1b5e20';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+
+    if (tabId === 'mod1') {
+      document.getElementById('m_chip').focus();
+    } else if (tabId === 'mod2') {
+      document.getElementById('n_busqueda_madre').focus();
+      actualizarGraficas();
+    }
+  }
+
+  // =========================================================================
+  // MÓDULO 1: GESTIÓN DEL MAESTRO DE ANIMALES
+  // =========================================================================
+  function guardarAnimal(e) {
+    e.preventDefault();
+    const finca = document.getElementById('m_finca').value.trim();
+    const chip = document.getElementById('m_chip').value.trim();
+    const arete = document.getElementById('m_arete').value.trim();
+
+    if (!finca || !chip || !arete) return;
+
+    // Validar que el chip no esté duplicado en toda la base
+    const chipExiste = animalesDB.some(a => a.chip.toLowerCase() === chip.toLowerCase());
+    if (chipExiste) {
+      mostrarToast('ERROR: Ese código de Chip ya está registrado.', true);
+      document.getElementById('m_chip').select();
+      return;
+    }
+
+    // Validar que el arete no esté duplicado en la misma finca
+    const areteExiste = animalesDB.some(a =>
+      a.finca.toLowerCase() === finca.toLowerCase() &&
+      a.arete.toLowerCase() === arete.toLowerCase()
+    );
+    if (areteExiste) {
+      mostrarToast(`ERROR: El arete ${arete} ya existe en ${finca}.`, true);
+      document.getElementById('m_arete').select();
+      return;
+    }
+
+    const nuevoAnimal = {
+      id: Date.now(),
+      finca: finca,
+      chip: chip,
+      arete: arete,
+      fechaRegistro: new Date().toISOString().split('T')[0]
+    };
+
+    animalesDB.unshift(nuevoAnimal);
+    guardarStorage();
+
+    // Limpiar solo chip y arete para agilizar carga continua en la misma finca
+    document.getElementById('m_chip').value = '';
+    document.getElementById('m_arete').value = '';
+    document.getElementById('m_chip').focus();
+    mostrarToast(`Animal registrado: Arete ${arete} (${finca})`);
+  }
+
+  function eliminarAnimal(id) {
+    if (!confirm('¿Eliminar este animal del maestro?')) return;
+    animalesDB = animalesDB.filter(a => a.id !== id);
+    guardarStorage();
+    mostrarToast('Animal eliminado.');
+  }
+
+  function renderTablaMaestro() {
+    const filtro = document.getElementById('buscarMaestro').value.toLowerCase().trim();
+    const tbody = document.getElementById('tbodyMaestro');
+    tbody.innerHTML = '';
+
+    const filtrados = animalesDB.filter(a =>
+      a.finca.toLowerCase().includes(filtro) ||
+      a.chip.toLowerCase().includes(filtro) ||
+      a.arete.toLowerCase().includes(filtro)
+    );
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No hay registros para mostrar.</td></tr>';
+      return;
+    }
+
+    filtrados.forEach(a => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${escapeHTML(a.finca)}</strong></td>
+        <td style="font-family:monospace; color:#b45309; font-weight:700;">${escapeHTML(a.chip)}</td>
+        <td><strong>${escapeHTML(a.arete)}</strong></td>
+        <td>${a.fechaRegistro}</td>
+        <td><button class="btn btn-danger" onclick="eliminarAnimal(${a.id})">Borrar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // =========================================================================
+  // MÓDULO 2: BÚSQUEDA DE MADRE Y REGISTRO DE NACIMIENTOS
+  // =========================================================================
+  function buscarMadre() {
+    const query = document.getElementById('n_busqueda_madre').value.trim().toLowerCase();
+    const fincaInput = document.getElementById('n_finca_auto');
+    const infoInput = document.getElementById('n_madre_info');
+    const statusBox = document.getElementById('motherStatusBox');
+    const chipHidden = document.getElementById('n_chip_confirmado');
+    const areteHidden = document.getElementById('n_arete_confirmado');
+
+    if (!query) {
+      fincaInput.value = '';
+      infoInput.value = '';
+      chipHidden.value = '';
+      areteHidden.value = '';
+      statusBox.classList.add('hidden');
+      return;
+    }
+
+    // Buscar coincidencia exacta por Chip o por Arete
+    const encontrada = animalesDB.find(a =>
+      a.chip.toLowerCase() === query || a.arete.toLowerCase() === query
+    );
+
+    statusBox.classList.remove('hidden');
+
+    if (encontrada) {
+      fincaInput.value = encontrada.finca;
+      infoInput.value = `Arete: ${encontrada.arete} | Chip: ${encontrada.chip}`;
+      chipHidden.value = encontrada.chip;
+      areteHidden.value = encontrada.arete;
+
+      statusBox.className = 'mother-status status-found';
+      statusBox.textContent = `Madre verificada en ${encontrada.finca} (Arete ${encontrada.arete}). Lista para registrar parto.`;
+    } else {
+      fincaInput.value = '';
+      infoInput.value = '';
+      chipHidden.value = '';
+      areteHidden.value = '';
+
+      statusBox.className = 'mother-status status-not-found';
+      statusBox.textContent = 'Animal no encontrado en el Maestro. Regístrelo primero en el Módulo 1.';
+    }
+  }
+
+  function actualizarFormularioParto() {
+    const tipo = document.getElementById('n_tipo_parto').value;
+    const boxCria1 = document.getElementById('boxCria1');
+    const boxCria2 = document.getElementById('boxCria2');
+    const c1Id = document.getElementById('c1_id');
+    const c2Id = document.getElementById('c2_id');
+    const reglaInfo = document.getElementById('reglaZootecnicaInfo');
+
+    if (tipo === 'Aborto' || tipo === 'Mortinato') {
+      // Ocultar ventanas de becerros
+      boxCria1.classList.add('hidden');
+      boxCria2.classList.add('hidden');
+      c1Id.removeAttribute('required');
+      c2Id.removeAttribute('required');
+      c1Id.value = '';
+      c2Id.value = '';
+
+      reglaInfo.style.background = '#fef2f2';
+      reglaInfo.style.borderColor = '#fecaca';
+      reglaInfo.style.color = '#991b1b';
+      reglaInfo.innerHTML = `<strong>Regla IEP (${tipo}):</strong> Se anota el evento en la bitácora, <strong>NO</strong> pide datos de becerro y <strong>NO suma</strong> al número de parto ni altera el IEP.`;
+    } else if (tipo === 'Gemelar') {
+      // Mostrar 2 fichas de crías, pero cuenta como 1 parto IEP
+      boxCria1.classList.remove('hidden');
+      boxCria2.classList.remove('hidden');
+      c1Id.setAttribute('required', 'required');
+      c2Id.setAttribute('required', 'required');
+
+      reglaInfo.style.background = '#fffbeb';
+      reglaInfo.style.borderColor = '#fde68a';
+      reglaInfo.style.color = '#92400e';
+      reglaInfo.innerHTML = `<strong>Regla IEP (Gemelar):</strong> Se registran 2 crías independientes bajo un mismo ID, pero el sistema lo asume como <strong>1 solo parto (Valor = 1)</strong> para determinar el IPP/IEP.`;
+    } else {
+      // Parto Normal o Distócico (1 cría)
+      boxCria1.classList.remove('hidden');
+      boxCria2.classList.add('hidden');
+      c1Id.setAttribute('required', 'required');
+      c2Id.removeAttribute('required');
+      c2Id.value = '';
+
+      reglaInfo.style.background = '#eff6ff';
+      reglaInfo.style.borderColor = '#bfdbfe';
+      reglaInfo.style.color = '#1e40af';
+      reglaInfo.innerHTML = `<strong>Regla IEP (${tipo}):</strong> Registra 1 cría y suma <strong>1 parto efectivo (Valor = 1)</strong> para el cálculo de Intervalo Entre Partos.`;
+    }
+  }
+
+  function guardarNacimiento(e) {
+    e.preventDefault();
+
+    const finca = document.getElementById('n_finca_auto').value;
+    const chipMadre = document.getElementById('n_chip_confirmado').value;
+    const areteMadre = document.getElementById('n_arete_confirmado').value;
+
+    if (!finca || !chipMadre) {
+      mostrarToast('ERROR: Debe identificar una madre registrada en el Maestro.', true);
+      document.getElementById('n_busqueda_madre').focus();
+      return;
+    }
+
+    const fecha = document.getElementById('n_fecha').value;
+    const tipoParto = document.getElementById('n_tipo_parto').value;
+    const obs = document.getElementById('n_obs').value.trim();
+
+    // Determinar si suma como parto válido para IEP (Normal, Gemelar, Distócico = 1; Aborto, Mortinato = 0)
+    const esPartoValidoIEP = (tipoParto === 'Aborto' || tipoParto === 'Mortinato') ? 0 : 1;
+
+    let crias = [];
+    if (esPartoValidoIEP === 1) {
+      const c1Id = document.getElementById('c1_id').value.trim();
+      const c1Sexo = document.getElementById('c1_sexo').value;
+      const c1PesoRaw = document.getElementById('c1_peso').value.trim();
+      const c1Peso = c1PesoRaw !== '' ? parseFloat(c1PesoRaw) : '';
+
+      crias.push({ id: c1Id, sexo: c1Sexo, peso: c1Peso });
+
+      if (tipoParto === 'Gemelar') {
+        const c2Id = document.getElementById('c2_id').value.trim();
+        const c2Sexo = document.getElementById('c2_sexo').value;
+        const c2PesoRaw = document.getElementById('c2_peso').value.trim();
+        const c2Peso = c2PesoRaw !== '' ? parseFloat(c2PesoRaw) : '';
+
+        crias.push({ id: c2Id, sexo: c2Sexo, peso: c2Peso });
+      }
+    }
+
+    const nuevoEvento = {
+      idEvento: 'EVT-' + Date.now(),
+      fecha: fecha,
+      finca: finca,
+      chipMadre: chipMadre,
+      areteMadre: areteMadre,
+      tipoParto: tipoParto,
+      cuentaPartoIEP: esPartoValidoIEP,
+      crias: crias,
+      observaciones: obs
+    };
+
+    partosDB.unshift(nuevoEvento);
+    guardarStorage();
+
+    // Resetear formulario manteniendo la fecha actual
+    document.getElementById('n_busqueda_madre').value = '';
+    document.getElementById('n_finca_auto').value = '';
+    document.getElementById('n_madre_info').value = '';
+    document.getElementById('n_chip_confirmado').value = '';
+    document.getElementById('n_arete_confirmado').value = '';
+    document.getElementById('motherStatusBox').classList.add('hidden');
+    document.getElementById('c1_id').value = '';
+    document.getElementById('c1_peso').value = '';
+    document.getElementById('c2_id').value = '';
+    document.getElementById('c2_peso').value = '';
+    document.getElementById('n_obs').value = '';
+    document.getElementById('n_tipo_parto').value = 'Parto Normal';
+    actualizarFormularioParto();
+
+    document.getElementById('n_busqueda_madre').focus();
+    mostrarToast(`Evento (${tipoParto}) guardado para madre ${areteMadre}.`);
+  }
+
+  function eliminarEventoParto(idEvento) {
+    if (!confirm('¿Eliminar este registro de parto?')) return;
+    partosDB = partosDB.filter(p => p.idEvento !== idEvento);
+    guardarStorage();
+    mostrarToast('Evento eliminado.');
+  }
+
+  function renderTablaNacimientos() {
+    const tbody = document.getElementById('tbodyNacimientos');
+    tbody.innerHTML = '';
+
+    if (partosDB.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">Aún no hay nacimientos o eventos registrados.</td></tr>';
+      return;
+    }
+
+    partosDB.forEach(p => {
+      let badgeTipo = 'pill-valid';
+      if (p.tipoParto === 'Aborto' || p.tipoParto === 'Mortinato') badgeTipo = 'pill-loss';
+      if (p.tipoParto === 'Gemelar') badgeTipo = 'pill-twin';
+
+      let textoCrias = '<span style="color:#94a3b8; font-style:italic;">Sin cría registrada</span>';
+      if (p.crias && p.crias.length > 0) {
+        textoCrias = p.crias.map((c, idx) =>
+          `<strong>#${idx+1}:</strong> ${escapeHTML(c.id)} (${c.sexo}${c.peso !== '' ? ', ' + c.peso + 'kg' : ''})`
+        ).join('<br>');
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.fecha}</td>
+        <td><strong>${escapeHTML(p.finca)}</strong></td>
+        <td>Arete: <strong>${escapeHTML(p.areteMadre)}</strong><br><small style="color:#64748b;">Chip: ${escapeHTML(p.chipMadre)}</small></td>
+        <td><span class="pill ${badgeTipo}">${p.tipoParto}</span></td>
+        <td style="text-align:center; font-weight:800;">${p.cuentaPartoIEP}</td>
+        <td>${textoCrias}</td>
+        <td><button class="btn btn-danger" onclick="eliminarEventoParto('${p.idEvento}')">Borrar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // =========================================================================
+  // ACTUALIZACIÓN GLOBAL DE UI Y SELECTORES DE FINCAS
+  // =========================================================================
+  function actualizarUI() {
+    document.getElementById('headerTotalAnimales').textContent = animalesDB.length;
+    document.getElementById('headerTotalPartos').textContent = partosDB.length;
+
+    // Actualizar datalist de fincas en Módulo 1
+    const fincasUnicas = [...new Set(animalesDB.map(a => a.finca))].sort();
+    const datalist = document.getElementById('listaFincas');
+    datalist.innerHTML = fincasUnicas.map(f => `<option value="${escapeHTML(f)}">`).join('');
+
+    // Actualizar filtro de fincas en Gráficas Módulo 2
+    const selectGrafica = document.getElementById('filtroFincaGrafica');
+    const seleccionPrevia = selectGrafica.value;
+    selectGrafica.innerHTML = '<option value="TODAS">Todas las Fincas</option>';
+    fincasUnicas.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      opt.textContent = f;
+      selectGrafica.appendChild(opt);
+    });
+    if (fincasUnicas.includes(seleccionPrevia)) {
+      selectGrafica.value = seleccionPrevia;
+    }
+
+    renderTablaMaestro();
+    renderTablaNacimientos();
+    actualizarGraficas();
+  }
+
+  // =========================================================================
+  // GRÁFICAS NATIVAS EN CANVAS HTML5 (100% OFFLINE SIN LIBRERÍAS EXTERNAS)
+  // =========================================================================
+  function actualizarGraficas() {
+    const fincaFiltro = document.getElementById('filtroFincaGrafica').value;
+    const datosFiltrados = fincaFiltro === 'TODAS'
+      ? partosDB
+      : partosDB.filter(p => p.finca === fincaFiltro);
+
+    dibujarGraficaDonaSexo(datosFiltrados);
+    dibujarGraficaBarrasParto(datosFiltrados);
+  }
+
+  function dibujarGraficaDonaSexo(datos) {
+    const canvas = document.getElementById('canvasDonaSexo');
+    const ctx = canvas.getContext('2d');
+    const legend = document.getElementById('legendDonaSexo');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let hembras = 0;
+    let machos = 0;
+
+    datos.forEach(p => {
+      if (p.crias && p.crias.length > 0) {
+        p.crias.forEach(c => {
+          if (c.sexo === 'Hembra') hembras++;
+          if (c.sexo === 'Macho') machos++;
+        });
+      }
+    });
+
+    const total = hembras + machos;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const radioExterno = 82;
+    const radioInterno = 46;
+
+    if (total === 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radioExterno, 0, Math.PI * 2);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 22;
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Sin crías vivas', cx, cy);
+      legend.innerHTML = '<span>Registre nacimientos para ver distribución</span>';
+      return;
+    }
+
+    const segmentos = [
+      { label: 'Hembras', valor: hembras, color: '#ec4899' },
+      { label: 'Machos', valor: machos, color: '#0284c7' }
+    ];
+
+    let anguloInicio = -Math.PI / 2;
+
+    segmentos.forEach(seg => {
+      if (seg.valor === 0) return;
+      const porcion = (seg.valor / total) * Math.PI * 2;
+      const anguloFin = anguloInicio + porcion;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radioExterno, anguloInicio, anguloFin);
+      ctx.arc(cx, cy, radioInterno, anguloFin, anguloInicio, true);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+
+      anguloInicio = anguloFin;
+    });
+
+    // Texto central en la dona
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(total, cx, cy - 6);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText('CRÍAS', cx, cy + 12);
+
+    const pctH = ((hembras / total) * 100).toFixed(1);
+    const pctM = ((machos / total) * 100).toFixed(1);
+
+    legend.innerHTML = `
+      <div class="legend-item"><span class="legend-color" style="background:#ec4899;"></span> Hembras: ${hembras} (${pctH}%)</div>
+      <div class="legend-item"><span class="legend-color" style="background:#0284c7;"></span> Machos: ${machos} (${pctM}%)</div>
+    `;
+  }
+
+  function dibujarGraficaBarrasParto(datos) {
+    const canvas = document.getElementById('canvasBarrasParto');
+    const ctx = canvas.getContext('2d');
+    const legend = document.getElementById('legendBarrasParto');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const categorias = [
+      { key: 'Parto Normal', label: 'Normal', color: '#16a34a' },
+      { key: 'Gemelar', label: 'Gemelar', color: '#f59e0b' },
+      { key: 'Distócico', label: 'Distócico', color: '#ea580c' },
+      { key: 'Aborto', label: 'Aborto', color: '#dc2626' },
+      { key: 'Mortinato', label: 'Mortinato', color: '#64748b' }
+    ];
+
+    const conteos = categorias.map(cat => ({
+      ...cat,
+      valor: datos.filter(p => p.tipoParto === cat.key).length
+    }));
+
+    const maxVal = Math.max(...conteos.map(c => c.valor), 1);
+    const padLeft = 32;
+    const padBottom = 34;
+    const padTop = 24;
+    const padRight = 16;
+
+    const areaW = canvas.width - padLeft - padRight;
+    const areaH = canvas.height - padTop - padBottom;
+
+    // Eje base
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, padTop);
+    ctx.lineTo(padLeft, padTop + areaH);
+    ctx.lineTo(padLeft + areaW, padTop + areaH);
+    ctx.stroke();
+
+    const anchoSlot = areaW / conteos.length;
+    const anchoBarra = Math.min(42, anchoSlot * 0.62);
+
+    conteos.forEach((item, i) => {
+      const barH = (item.valor / maxVal) * areaH;
+      const x = padLeft + i * anchoSlot + (anchoSlot - anchoBarra) / 2;
+      const y = padTop + areaH - barH;
+
+      // Barra
+      ctx.fillStyle = item.color;
+      ctx.fillRect(x, y, anchoBarra, barH);
+
+      // Número encima de la barra
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(item.valor, x + anchoBarra / 2, y - 6);
+
+      // Etiqueta eje X
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(item.label, x + anchoBarra / 2, padTop + areaH + 16);
+    });
+
+    const totalPartosIEP = datos.reduce((acc, p) => acc + p.cuentaPartoIEP, 0);
+    legend.innerHTML = `<span>Total Eventos: <strong>${datos.length}</strong> | Partos Válidos para IEP: <strong>${totalPartosIEP}</strong></span>`;
+  }
+
+  // =========================================================================
+  // EXPORTACIÓN CSV (PUNTO DECIMAL, SIN MILES) Y RESPALDO JSON
+  // =========================================================================
+  function descargarArchivo(contenido, nombreArchivo, tipoMime) {
+    const blob = new Blob(["\uFEFF" + contenido], { type: tipoMime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportarMaestroCSV() {
+    if (animalesDB.length === 0) {
+      mostrarToast('No hay animales registrados para exportar.', true);
+      return;
+    }
+    const encabezados = ['Finca', 'Chip_RFID', 'Arete', 'Fecha_Registro'];
+    const filas = animalesDB.map(a => [
+      `"${a.finca.replace(/"/g, '""')}"`,
+      `"${a.chip}"`,
+      `"${a.arete}"`,
+      a.fechaRegistro
+    ].join(','));
+
+    const csv = [encabezados.join(','), ...filas].join('\n');
+    descargarArchivo(csv, `Syntro_Maestro_RFID_${fechaHoyStr()}.csv`, 'text/csv;charset=utf-8;');
+    mostrarToast('Maestro RFID exportado en CSV.');
+  }
+
+  function exportarNacimientosCSV() {
+    if (partosDB.length === 0) {
+      mostrarToast('No hay eventos de nacimiento para exportar.', true);
+      return;
+    }
+
+    // Estructura lista para cálculo de IEP en el módulo de visualización
+    // Sin separadores de miles y punto (.) como decimal
+    const encabezados = [
+      'ID_Evento',
+      'Fecha',
+      'Finca',
+      'Chip_Madre',
+      'Arete_Madre',
+      'Tipo_Parto',
+      'Cuenta_Como_Parto_IEP',
+      'Cria_1_ID',
+      'Cria_1_Sexo',
+      'Cria_1_Peso_kg',
+      'Cria_2_ID',
+      'Cria_2_Sexo',
+      'Cria_2_Peso_kg',
+      'Observaciones'
+    ];
+
+    const filas = partosDB.map(p => {
+      const c1 = p.crias[0] || { id: '', sexo: '', peso: '' };
+      const c2 = p.crias[1] || { id: '', sexo: '', peso: '' };
+
+      // Asegurar formato numérico puro con punto decimal y sin miles
+      const peso1 = c1.peso !== '' ? Number(c1.peso).toString() : '';
+      const peso2 = c2.peso !== '' ? Number(c2.peso).toString() : '';
+
+      return [
+        `"${p.idEvento}"`,
+        p.fecha,
+        `"${p.finca.replace(/"/g, '""')}"`,
+        `"${p.chipMadre}"`,
+        `"${p.areteMadre}"`,
+        `"${p.tipoParto}"`,
+        p.cuentaPartoIEP,
+        `"${c1.id}"`,
+        `"${c1.sexo}"`,
+        peso1,
+        `"${c2.id}"`,
+        `"${c2.sexo}"`,
+        peso2,
+        `"${(p.observaciones || '').replace(/"/g, '""')}"`
+      ].join(',');
+    });
+
+    const csv = [encabezados.join(','), ...filas].join('\n');
+    descargarArchivo(csv, `Syntro_Nacimientos_IEP_${fechaHoyStr()}.csv`, 'text/csv;charset=utf-8;');
+    mostrarToast('Nacimientos exportados en CSV (listos para IEP).');
+  }
+
+  function exportarRespaldoJSON() {
+    const respaldo = {
+      sistema: 'Syntro Campo Offline',
+      fechaExportacion: new Date().toISOString(),
+      animales: animalesDB,
+      partos: partosDB
+    };
+    descargarArchivo(JSON.stringify(respaldo, null, 2), `Syntro_Respaldo_Total_${fechaHoyStr()}.json`, 'application/json');
+    mostrarToast('Respaldo completo JSON descargado.');
+  }
+
+  function importarRespaldoJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (Array.isArray(data.animales) && Array.isArray(data.partos)) {
+          if (confirm(`Se cargarán ${data.animales.length} animales y ${data.partos.length} eventos de parto. ¿Desea reemplazar la base actual?`)) {
+            animalesDB = data.animales;
+            partosDB = data.partos;
+            guardarStorage();
+            mostrarToast('Base de datos restaurada correctamente.');
+          }
+        } else {
+          mostrarToast('El archivo JSON no tiene el formato válido de Syntro.', true);
+        }
+      } catch (err) {
+        mostrarToast('Error al leer el archivo JSON.', true);
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function fechaHoyStr() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag]));
+  }
+</script>
+
+</body>
+</html>
